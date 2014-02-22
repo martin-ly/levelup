@@ -11,6 +11,19 @@ const (
 	DefaultBloomFilterSize = 10
 )
 
+// LevelUp is a wrapper around levigo DB objects with the following
+// simplifications:
+//   * useful, sane (at least to me) default options for db creation, 
+//     read and write options.
+//   * parameters for options we want to pass into the new function.
+//   * Operations work on strings instead of []bytes. 
+//   * concurrency-safe with a sync.RWMutex
+//   * Remove() method returns the value removed.
+//   * Move() method moves a value from one key to another.
+//   * Required prefixes to enable simplier iteration.
+//
+// In short: We're sacrificing completeness for simplicity.
+//
 type LevelUp struct {
 	db *levigo.DB
 	l sync.RWMutex
@@ -35,64 +48,64 @@ func NewLevelUp(path string, fileSync bool, cacheSize int) (*LevelUp, error) {
 	wo := levigo.NewWriteOptions()
 	wo.SetSync(fileSync)
 
-	dq := LevelUp{db, l, ro, wo}
-	return &dq, nil
+	lu := LevelUp{db, l, ro, wo}
+	return &lu, nil
 }
 
 
-func (dq *LevelUp) Put(prefix, key, data string) {
-	dq.l.Lock()
-	defer dq.l.Unlock()
-	dq.put(makeKey(prefix, key), data)
+func (lu *LevelUp) Put(prefix, key, data string) {
+	lu.l.Lock()
+	defer lu.l.Unlock()
+	lu.put(makeKey(prefix, key), data)
 }
-func (dq *LevelUp) put(key, data string) {
-	dq.db.Put(dq.defWo, []byte(key), []byte(data))
+func (lu *LevelUp) put(key, data string) {
+	lu.db.Put(lu.defWo, []byte(key), []byte(data))
 }
 
 
-func (dq *LevelUp) Get(prefix, key string) string {
-	dq.l.RLock()
-	defer dq.l.RUnlock()
-	return dq.get(makeKey(prefix, key))
+func (lu *LevelUp) Get(prefix, key string) string {
+	lu.l.RLock()
+	defer lu.l.RUnlock()
+	return lu.get(makeKey(prefix, key))
 }
-func (dq *LevelUp) get(key string) string {
-	data, err := dq.db.Get(dq.defRo, []byte(key))
+func (lu *LevelUp) get(key string) string {
+	data, err := lu.db.Get(lu.defRo, []byte(key))
 	if err != nil || data == nil {
 		return ""
 	}
 	return string(data)
 }
 
-func (dq *LevelUp) Remove(prefix, key string) string {
-	dq.l.Lock()
-	defer dq.l.Unlock()
-	return dq.remove(makeKey(prefix, key))
+func (lu *LevelUp) Remove(prefix, key string) string {
+	lu.l.Lock()
+	defer lu.l.Unlock()
+	return lu.remove(makeKey(prefix, key))
 }
-func (dq *LevelUp) remove(key string) string {
-	result := dq.get(key)
-	err := dq.db.Delete(dq.defWo, []byte(key))
+func (lu *LevelUp) remove(key string) string {
+	result := lu.get(key)
+	err := lu.db.Delete(lu.defWo, []byte(key))
 	if err != nil {
 		log.Println("error removing key", key)
 	}
 	return result
 }
 
-func (dq *LevelUp) Move(fromPrefix, fromKey, toPrefix, toKey string) {
-	dq.l.Lock()
-	defer dq.l.Unlock()
+func (lu *LevelUp) Move(fromPrefix, fromKey, toPrefix, toKey string) {
+	lu.l.Lock()
+	defer lu.l.Unlock()
 	fromRealKey := makeKey(fromPrefix, fromKey)
 	toRealKey := makeKey(toPrefix, toKey)
-	data := dq.remove(fromRealKey)
+	data := lu.remove(fromRealKey)
 	if data == "" {
 		return
 	}
-	dq.put(toRealKey, data)
+	lu.put(toRealKey, data)
 }
 
-func (dq *LevelUp) Close() {
-	dq.db.Close()
-	dq.defRo.Close()
-	dq.defWo.Close()
+func (lu *LevelUp) Close() {
+	lu.db.Close()
+	lu.defRo.Close()
+	lu.defWo.Close()
 }
 
 func makeKey(pfx, key string) string {
