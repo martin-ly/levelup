@@ -3,7 +3,6 @@ package levelup
 import (
 	"github.com/jmhodges/levigo"
 	"sync"
-	"strings"
 	"log"
 )
 
@@ -54,6 +53,9 @@ func NewLevelUp(path string, fileSync bool, cacheSize int) (*LevelUp, error) {
 
 
 func (lu *LevelUp) Put(prefix, key, data string) {
+	if !checkPrefix(prefix) {
+		log.Panicf("prefix cannot have the prefix delim in it!")
+	}
 	lu.l.Lock()
 	defer lu.l.Unlock()
 	lu.put(makeKey(prefix, key), data)
@@ -108,11 +110,6 @@ func (lu *LevelUp) Close() {
 	lu.defWo.Close()
 }
 
-func makeKey(pfx, key string) string {
-	return strings.Join([]string{pfx, key}, "/")
-}
 
-func unMakeKey(pfx, key string) string {
-	return strings.TrimPrefix(key, pfx)
-}
+
 
