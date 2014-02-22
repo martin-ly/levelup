@@ -25,7 +25,7 @@ func makeTestLevelUp(testId string) (*levelup.LevelUp, error) {
 	if err := os.MkdirAll(dqPath, os.ModeDir); err != nil {
 		return nil, err
 	}
-	return levelup.NewLevelUp(dqPath, false)
+	return levelup.NewLevelUp(dqPath, false, 1<<10)
 }
 
 func TestLevelUp(t *testing.T) {

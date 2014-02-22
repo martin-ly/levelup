@@ -7,6 +7,10 @@ import (
 	"log"
 )
 
+const (
+	DefaultBloomFilterSize = 10
+)
+
 type LevelUp struct {
 	db *levigo.DB
 	l sync.RWMutex
@@ -14,11 +18,11 @@ type LevelUp struct {
 	defWo *levigo.WriteOptions
 }
 
-func NewLevelUp(path string, fileSync bool) (*LevelUp, error) {
+func NewLevelUp(path string, fileSync bool, cacheSize int) (*LevelUp, error) {
 	var l sync.RWMutex
 	opts := levigo.NewOptions()
-	opts.SetCache(levigo.NewLRUCache(1<<24))
-	opts.SetFilterPolicy(levigo.NewBloomFilter(10))
+	opts.SetCache(levigo.NewLRUCache(cacheSize))
+	opts.SetFilterPolicy(levigo.NewBloomFilter(DefaultBloomFilterSize))
 	opts.SetCreateIfMissing(true)
 	db, err := levigo.Open(path, opts)
 	if err != nil {
@@ -90,8 +94,6 @@ func (dq *LevelUp) Close() {
 	dq.defRo.Close()
 	dq.defWo.Close()
 }
-
-
 
 func makeKey(pfx, key string) string {
 	return strings.Join([]string{pfx, key}, "/")
