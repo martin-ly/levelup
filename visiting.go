@@ -6,12 +6,19 @@ import (
 )
 
 var (
-	FirstDelim = string([]byte{0x00, 0x00, 0x00, 0x00})
-	LastDelim  = string([]byte{0xFF, 0xFF, 0xFF, 0xFF})
+	FirstBookend = string([]byte{})
+	LastBookend  = string([]byte{0xFF, 0xFF, 0xFF, 0xFF})
 )
 var (
 	errStop = errors.New("stop visiting")
 )
+
+type Visit struct {
+	prefix string
+	key    string
+	value  string
+}
+
 
 type VisitFunc func(prefix, key, value string) error
 type IterFunc func(it *levigo.Iterator)
@@ -27,23 +34,28 @@ type Visitor struct {
 }
 
 func NewForwardVisitor(prefix string, it *levigo.Iterator, fn VisitFunc) *Visitor {
-	start := makeKey(prefix, FirstDelim)
-	return &Visitor{
+	v := Visitor{
 		it: it, 
 		nx: NextFunc, 
 		fn: fn, 
-		cursor: []byte(start),
 	}
+	v.SetCursor(prefix, FirstBookend)
+	return &v
 }
 
 func NewBackwardVisitor(prefix string, it *levigo.Iterator, fn VisitFunc) *Visitor {
-	start := makeKey(prefix, LastDelim)
-	return &Visitor{
+	v := Visitor{
 		it: it, 
 		nx: PrevFunc, 
 		fn: fn, 
-		cursor: []byte(start),
 	}
+	v.SetCursor(prefix, LastBookend)
+	return &v
+}
+
+func (v *Visitor) SetCursor(prefix, key string) {
+	start := makeKey(prefix, key)
+	v.cursor = []byte(start)
 }
 
 func (v *Visitor) Visit(limit int) error {
@@ -62,44 +74,3 @@ func (v *Visitor) Visit(limit int) error {
 	}
 	return v.it.GetError()
 }
-
-
-
-
-
-
-
-
-// func (dq *LevelUp) Push(prefix, key, data string) {
-// 	dq.l.Lock()
-// 	defer dq.l.Unlock()
-// 	dq.put(makeKey(prefix, key), data)
-// }
-
-// func (dq *LevelUp) Peek(prefix string, limit int) []Pair {
-// 	dq.l.RLock()
-// 	defer dq.l.RUnlock()
-// 	result := make([]Pair, 0, limit)
-// 	peeker := func(p *Pair) {
-// 		result = append(result, *p)
-// 	}
-// 	dq.visit(prefix, peeker, limit)
-
-// 	return result
-// }
-
-// func (dq *LevelUp) Pop(prefix string, limit int) []Pair {
-// 	dq.l.Lock()
-// 	defer dq.l.Unlock()
-// 	result := make([]Pair, 0, limit)
-// 	popper := func(p *Pair) {
-// 		result = append(result, *p)
-		
-// 	}
-// 	dq.visit(prefix, popper, limit)
-
-// 	return result
-// }
-
-
-

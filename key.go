@@ -5,11 +5,12 @@ import (
 )
 
 var (
-	PrefixDelim = string([]byte{0x00})
+	PrefixDelim = "^"
 )
 
-func checkPrefix(prefix string) bool {
-	return strings.Index(prefix, PrefixDelim) > 0
+func checkPrefix(prefix string) (ok bool) {
+	ok = strings.Index(prefix, PrefixDelim) <= 0
+	return
 }
 
 func makeKey(prefix, key string) string {

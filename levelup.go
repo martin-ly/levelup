@@ -104,12 +104,50 @@ func (lu *LevelUp) Move(fromPrefix, fromKey, toPrefix, toKey string) {
 	lu.put(toRealKey, data)
 }
 
+func (lu *LevelUp) LookForward(prefix, start string, limit int) []Visit {
+	it := lu.getIterator()
+	defer it.Close()
+	result := make([]Visit, 0, limit)
+	looker := func(prefix, key, value string) error {
+		result = append(result, Visit{prefix, key, value})
+		return nil
+	}
+	visitor := NewForwardVisitor(prefix, it, looker)
+	visitor.SetCursor(prefix, start)
+	visitor.Visit(limit)
+	return result
+}
+
+func (lu *LevelUp) LookBackward(prefix, start string, limit int) []Visit {
+	it := lu.getIterator()
+	defer it.Close()
+	result := make([]Visit, 0, limit)
+	looker := func(prefix, key, value string) error {
+		result = append(result, Visit{prefix, key, value})
+		return nil
+	}
+	visitor := NewBackwardVisitor(prefix, it, looker)
+	visitor.SetCursor(prefix, start)
+	visitor.Visit(limit)
+	return nil
+}
+
+func (lu *LevelUp) getIterator() *levigo.Iterator {
+	lu.l.RLock()
+	defer lu.l.RUnlock()
+	snap := lu.db.NewSnapshot()
+	itRo := levigo.NewReadOptions()
+	itRo.SetSnapshot(lu.db.NewSnapshot())
+	defer lu.db.ReleaseSnapshot(snap)
+	defer itRo.Close()
+	return lu.db.NewIterator(itRo)
+}
+
 func (lu *LevelUp) Close() {
 	lu.db.Close()
 	lu.defRo.Close()
 	lu.defWo.Close()
 }
-
 
 
 
