@@ -8,7 +8,7 @@ func TestKeyMakings(t *testing.T) {
 	samples := []struct{
 		p, k, check string
 	}{
-		{"people", "joe", "people" + string([]byte{0x00}) + "joe"},
+		{"people", "joe", "people" + "^" + "joe"},
 	}
 	for _, s := range samples {
 		realKey := makeKey(s.p, s.k)

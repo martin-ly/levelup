@@ -136,22 +136,12 @@ func TestVisiting(t *testing.T) {
 	for prefix, data := range testDataByPrefix {
 		// forward
 		//
-		result := lu.LookForward(prefix, "", 1)
+		result := lu.Look(prefix, "", 1)
 		if len(result) != 1 {
-			t.Fatal("too long")
+			t.Fatal("wrong length forward", prefix, result)
 		} 
 		if !checkVisit(result[0], data[0]) {
-			t.Fatal("mismatch", result, data[0])
-		}
-		
-		// backward
-		//
-		result = lu.LookBackward(prefix, "", 1)
-		if len(result) != 1 {
-			t.Fatal("too long", result)
-		} 
-		if !checkVisit(result[0], data[len(data)-1]) {
-			t.Fatal("mismatch", result, data[len(data)-1])
+			t.Fatal("mismatch backward", result, data[0])
 		}
 
 	}

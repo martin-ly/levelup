@@ -104,7 +104,7 @@ func (lu *LevelUp) Move(fromPrefix, fromKey, toPrefix, toKey string) {
 	lu.put(toRealKey, data)
 }
 
-func (lu *LevelUp) LookForward(prefix, start string, limit int) []Visit {
+func (lu *LevelUp) Look(prefix, start string, limit int) []Visit {
 	it := lu.getIterator()
 	defer it.Close()
 	result := make([]Visit, 0, limit)
@@ -112,24 +112,10 @@ func (lu *LevelUp) LookForward(prefix, start string, limit int) []Visit {
 		result = append(result, Visit{prefix, key, value})
 		return nil
 	}
-	visitor := NewForwardVisitor(prefix, it, looker)
+	visitor := NewVisitor(prefix, it, looker)
 	visitor.SetCursor(prefix, start)
 	visitor.Visit(limit)
 	return result
-}
-
-func (lu *LevelUp) LookBackward(prefix, start string, limit int) []Visit {
-	it := lu.getIterator()
-	defer it.Close()
-	result := make([]Visit, 0, limit)
-	looker := func(prefix, key, value string) error {
-		result = append(result, Visit{prefix, key, value})
-		return nil
-	}
-	visitor := NewBackwardVisitor(prefix, it, looker)
-	visitor.SetCursor(prefix, start)
-	visitor.Visit(limit)
-	return nil
 }
 
 func (lu *LevelUp) getIterator() *levigo.Iterator {
