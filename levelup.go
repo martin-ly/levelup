@@ -4,6 +4,8 @@ import (
 	"github.com/jmhodges/levigo"
 	"sync"
 	"log"
+	"path"
+	"os"
 )
 
 const (
@@ -30,13 +32,21 @@ type LevelUp struct {
 	defWo *levigo.WriteOptions
 }
 
-func NewLevelUp(path string, fileSync bool, cacheSize int) (*LevelUp, error) {
+func NewLevelUp(luPath string, fileSync bool, cacheSize int) (*LevelUp, error) {
 	var l sync.RWMutex
 	opts := levigo.NewOptions()
 	opts.SetCache(levigo.NewLRUCache(cacheSize))
 	opts.SetFilterPolicy(levigo.NewBloomFilter(DefaultBloomFilterSize))
 	opts.SetCreateIfMissing(true)
-	db, err := levigo.Open(path, opts)
+
+	// create any subdirs if needed
+	//
+	luDir, _ := path.Split(luPath)
+	if err := os.MkdirAll(luDir, os.ModeDir); err != nil {
+		return nil, err
+	}
+
+	db, err := levigo.Open(luPath, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +127,20 @@ func (lu *LevelUp) Look(prefix, start string, limit int) []Visit {
 	visitor.Visit(limit)
 	return result
 }
+
+func (lu *LevelUp) Behind(prefix, start string) *Visit {
+	it := lu.getIterator()
+	defer it.Close()
+	it.Seek([]byte(makeKey(prefix,start)))
+	it.Prev()
+	if !it.Valid() {
+		return nil
+	}
+	prefix, key := unMakeKey(string(it.Key()))
+	value := string(it.Value())
+	return &Visit{prefix,key,value}
+}
+
 
 func (lu *LevelUp) getIterator() *levigo.Iterator {
 	lu.l.RLock()

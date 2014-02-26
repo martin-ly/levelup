@@ -12,6 +12,6 @@ func VisitString(v *Visit) string {
 func PrintRawLevelUp(lu *LevelUp) {
 	it := lu.getIterator()
 	for it.SeekToFirst(); it.Valid(); it.Next() {
-		log.Println(it.Key(), it.Value(), string(it.Key()))
+		log.Printf("%-25s %v %v", string(it.Key()), it.Key(), it.Value())
 	}
 }

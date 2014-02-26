@@ -122,14 +122,18 @@ func TestVisiting(t *testing.T) {
 
 	// add the test data to the store.
 	//
+	testDataFlat := make(TestData, 0)
 	for _, td := range testDataByPrefix {
 		for _, tr := range td {
 			lu.Put(tr.prefix, tr.key, tr.value)
+			testDataFlat = append(testDataFlat,tr)
 		}
 	}
+	// levelup.PrintRawLevelUp(lu)
 	// after it's add, sort each prefix-list so we can check against it.
 	//
 	sortData(testDataByPrefix)
+	sort.Sort(testDataFlat)
 
 	// check first rows
 	//
@@ -146,6 +150,16 @@ func TestVisiting(t *testing.T) {
 
 	}
 
-	
+	for i:= 1; i < len(testDataFlat); i++ {
+		row := testDataFlat[i]
+		check := testDataFlat[i-1]
+		back := lu.Behind(row.prefix, row.key)
+		if check.String() != levelup.VisitString(back) {
+			t.Fatal()
+		}
+		// t.Log(check.String(), levelup.VisitString(back))
+	}	
 
 }
+
+
