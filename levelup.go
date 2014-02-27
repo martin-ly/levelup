@@ -146,6 +146,16 @@ func (lu *LevelUp) Behind(prefix, start string) *Visit {
 	return lu.visitFromIterator(it)
 }
 
+func (lu *LevelUp) First() *Visit {
+	it := lu.getIterator()
+	defer it.Close()
+	if it.SeekToFirst(); it.Valid() {
+		return lu.visitFromIterator(it)
+	} else {
+		return nil
+	}
+}
+
 func (lu *LevelUp) Last() *Visit {
 	it := lu.getIterator()
 	defer it.Close()
