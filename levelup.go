@@ -124,7 +124,7 @@ func (lu *LevelUp) Look(prefix, start string, limit int) []Visit {
 	}
 	visitor := NewVisitor(prefix, it, looker)
 	visitor.SetCursor(prefix, start)
-	visitor.Visit(limit)
+	visitor.Visit(limit, true)
 	return result
 }
 
@@ -132,9 +132,16 @@ func (lu *LevelUp) Behind(prefix, start string) *Visit {
 	it := lu.getIterator()
 	defer it.Close()
 	it.Seek([]byte(makeKey(prefix,start)))
-	it.Prev()
 	if !it.Valid() {
-		return nil
+		it.SeekToLast()
+		if !it.Valid() {
+			return nil
+		}
+	} else {
+		it.Prev()
+		if !it.Valid() {
+			return nil
+		}
 	}
 	prefix, key := unMakeKey(string(it.Key()))
 	value := string(it.Value())
