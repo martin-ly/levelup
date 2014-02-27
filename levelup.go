@@ -143,6 +143,23 @@ func (lu *LevelUp) Behind(prefix, start string) *Visit {
 			return nil
 		}
 	}
+	return lu.visitFromIterator(it)
+}
+
+func (lu *LevelUp) Last() *Visit {
+	it := lu.getIterator()
+	defer it.Close()
+	if it.SeekToLast(); it.Valid() {
+		return lu.visitFromIterator(it)
+	} else {
+		return nil
+	}
+}
+
+func (lu *LevelUp) visitFromIterator(it *levigo.Iterator) *Visit {
+	if !it.Valid() {
+		return nil
+	}
 	prefix, key := unMakeKey(string(it.Key()))
 	value := string(it.Value())
 	return &Visit{prefix,key,value}
